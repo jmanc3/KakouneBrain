@@ -1,0 +1,46 @@
+<!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
+<idea-plugin>
+    <!-- Unique identifier of the plugin. It should be FQN. It cannot be changed between the plugin versions. -->
+    <id>KakouneBrain</id>
+
+    <!-- Public plugin name should be written in Title Case.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-name -->
+    <name>KakouneBrain</name>
+
+    <!-- A displayed Vendor name or Organization ID displayed on the Plugins Page. -->
+    <vendor url="https://www.github.com/jmanc3">jmanc3</vendor>
+
+    <!-- Description of the plugin displayed on the Plugin Page and IDE Plugin Manager.
+         Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
+         Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
+    <description><![CDATA[
+<p>Adds Kakoune inspired modal text editing to Jetbrains IDEs</p>
+<br/>
+<p>KakouneBrain supports many Kakoune features including normal/insert modes, motion keys, deletion/changing, macros etc. Contributions which get us closer to feature parity are welcome.</p>
+<br/>
+<p>See also:</p>
+<ul>
+  <li><a href="https://www.github.com/jmanc3/kakoune-brain">Keybinds</a>: how to move around</li>
+  <li><a href="https://www.github.com/jmanc3/kakoune-brain">Github repository</a>: documentation and contributing</li>
+</ul>
+ ]]></description>
+
+    <!-- Product and plugin compatibility requirements.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-compatibility.html -->
+    <depends>com.intellij.modules.platform</depends>
+
+    <!-- Extension points defined by the plugin.
+         Read more: https://plugins.jetbrains.com/docs/intellij/plugin-extension-points.html -->
+
+    <extensions defaultExtensionNs="com.intellij">
+        <actionPromoter implementation="com.jmanc3.kakounebrain.input.implementation.other.KakPromo" order="last"/>
+        <postStartupActivity implementation="com.jmanc3.kakounebrain.PluginStartup" order="first"/>
+    </extensions>
+
+
+    <projectListeners>
+        <listener class="com.jmanc3.kakounebrain.KakOnFileOpen"
+                  topic="com.intellij.openapi.fileEditor.FileEditorManagerListener"/>
+    </projectListeners>
+
+</idea-plugin>

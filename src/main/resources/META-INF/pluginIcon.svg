@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="40"
+   height="40"
+   viewBox="0 0 10.583333 10.583334"
+   version="1.1"
+   id="svg1"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs1">
+    <linearGradient
+       id="linearGradient51">
+      <stop
+         style="stop-color:#00abc2;stop-opacity:1;"
+         offset="0"
+         id="stop51" />
+      <stop
+         style="stop-color:#00f0bc;stop-opacity:1;"
+         offset="1"
+         id="stop52" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2">
+      <stop
+         style="stop-color:#ed5e45;stop-opacity:1;"
+         offset="0.21481119"
+         id="stop2" />
+      <stop
+         style="stop-color:#ff3c79;stop-opacity:1;"
+         offset="0.74945056"
+         id="stop3" />
+    </linearGradient>
+    <linearGradient
+       xlink:href="#linearGradient2"
+       id="linearGradient3"
+       x1="12.937767"
+       y1="28.651573"
+       x2="131.31085"
+       y2="143.07797"
+       gradientUnits="userSpaceOnUse" />
+    <clipPath
+       clipPathUnits="userSpaceOnUse"
+       id="clipPath49">
+      <path
+         style="fill:#aaffee;stroke-width:0.264583"
+         d="M 20.668277,129.43946 C 19.967657,124.18482 6.3055762,9.9838285 6.3055762,9.9838285 L 49.218525,32.053345 121.73265,8.4074347 57.625959,78.469392 132.59225,131.54132 42.212329,98.086738 Z"
+         id="path50" />
+    </clipPath>
+    <linearGradient
+       xlink:href="#linearGradient51"
+       id="linearGradient52"
+       x1="57.604065"
+       y1="97.648857"
+       x2="132.5813"
+       y2="97.648857"
+       gradientUnits="userSpaceOnUse" />
+  </defs>
+  <g
+     id="g1"
+     transform="matrix(0.07542364,0,0,0.07735482,0.05357759,-0.12118857)">
+    <rect
+       style="fill:url(#linearGradient3);stroke-width:0.264583"
+       id="rect1"
+       width="137.847"
+       height="137.84689"
+       x="0"
+       y="0.17515489"
+       clip-path="url(#clipPath49)" />
+    <path
+       style="fill:url(#linearGradient52);stroke-width:0.264583"
+       d="M 57.604064,78.463915 C 58.304683,77.763296 70.820833,64.046174 70.820833,64.046174 L 132.5906,131.54133 Z"
+       id="path51" />
+  </g>
+</svg>

@@ -32,7 +32,7 @@ public class KakOnFileOpen implements FileEditorManagerListener, DumbAware {
     }
 
     @Override
-    public void fileOpenedSync(@NotNull FileEditorManager source, @NotNull VirtualFile file, @NotNull List<FileEditorWithProvider> editorsWithProviders) {
+    public void fileOpened(@NotNull FileEditorManager source, @NotNull VirtualFile file) {
         FileEditorManagerListener.super.fileOpened(source, file);
 
         for (FileEditor allEditor : source.getAllEditors(file)) {

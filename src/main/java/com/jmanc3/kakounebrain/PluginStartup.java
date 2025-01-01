@@ -15,14 +15,17 @@ import com.intellij.openapi.editor.event.EditorFactoryListener;
 import com.intellij.openapi.keymap.KeymapManager;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.startup.StartupActivity;
+import com.intellij.openapi.startup.ProjectActivity;
 import com.intellij.openapi.util.registry.Registry;
 import com.intellij.ui.JBColor;
 import com.jmanc3.kakounebrain.input.KakInput;
 import com.jmanc3.kakounebrain.input.implementation.KakCommand;
 import com.jmanc3.kakounebrain.input.implementation.other.InterceptedAction;
 import com.jmanc3.kakounebrain.input.implementation.other.State;
+import kotlin.Unit;
+import kotlin.coroutines.Continuation;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.event.FocusEvent;
@@ -33,7 +36,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-public class PluginStartup implements StartupActivity, DumbAware, Disposable {
+public class PluginStartup implements ProjectActivity, DumbAware, Disposable {
 
     public static ArrayList<ActionAndShortcut> defaultActionsAndShortcuts = new ArrayList<>();
 
@@ -47,11 +50,6 @@ public class PluginStartup implements StartupActivity, DumbAware, Disposable {
 
     public static final CaretVisualAttributes DEFAULT_CARET = new CaretVisualAttributes(JBColor.WHITE,
             CaretVisualAttributes.Weight.HEAVY, CaretVisualAttributes.Shape.BLOCK, .1F);
-
-    @Override
-    public void runActivity(@NotNull Project project) {
-        startup();
-    }
 
     public static void startup() {
         // TODO: change firstTime back to true so this executes
@@ -295,6 +293,14 @@ public class PluginStartup implements StartupActivity, DumbAware, Disposable {
     @Override
     public void dispose() {
 
+    }
+
+    @Nullable
+    @Override
+    public Object execute(@NotNull Project project, @NotNull Continuation<? super Unit> continuation) {
+        startup();
+
+        return null;
     }
 
     static class ActionAndShortcut {

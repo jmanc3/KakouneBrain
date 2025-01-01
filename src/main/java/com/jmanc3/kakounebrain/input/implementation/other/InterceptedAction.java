@@ -8,13 +8,9 @@ import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.editor.Editor;
 import com.jmanc3.kakounebrain.KakOnFileOpen;
-import com.jmanc3.kakounebrain.input.implementation.KakImplementationKt;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
-
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.fail;
 
 public class InterceptedAction extends AnAction {
 
@@ -118,7 +114,7 @@ public class InterceptedAction extends AnAction {
     public static void executeAction(@NotNull Editor editor, @NotNull String actionId, boolean assertActionIsEnabled) {
         ActionManagerEx actionManager = ActionManagerEx.getInstanceEx();
         AnAction action = actionManager.getAction(actionId);
-        assertNotNull(action);
+//        assertNotNull(action);
         executeAction(editor, assertActionIsEnabled, action);
     }
 
@@ -127,7 +123,7 @@ public class InterceptedAction extends AnAction {
         if (ActionUtil.lastUpdateAndCheckDumb(action, event, false)) {
             ActionUtil.performActionDumbAwareWithCallbacks(action, event);
         } else if (assertActionIsEnabled) {
-            fail("Action " + action + " is disabled");
+//            fail("Action " + action + " is disabled");
         }
     }
 

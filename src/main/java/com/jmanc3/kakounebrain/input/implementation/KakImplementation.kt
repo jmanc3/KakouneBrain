@@ -26,7 +26,6 @@ import com.jmanc3.kakounebrain.PluginStartup
 import com.jmanc3.kakounebrain.input.KakInput
 //import com.jmanc3.kakounebrain.input.implementation.other.KakFindUtil
 import com.jmanc3.kakounebrain.input.implementation.other.State
-import org.junit.Assert
 import java.awt.event.KeyEvent
 import java.util.concurrent.Callable
 
@@ -1126,15 +1125,10 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         KakInput.getInstance().someoneWantsKeyPress = Callable {
             var ate = true
             var prev = false
+            var closeEditor = false
             when (KakInput.getInstance().c) {
                 'p' -> {
-                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                        e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                    KakInput.getInstance().menuRenderer.hideIt(editor)
-                    KakInput.getInstance().menuRenderer.hideAll()
-                    for (i in window.tabCount downTo 0) {
-                        window.tabbedPane.close()
-                    }
+                    closeEditor = true
                 }
 
                 'h' -> {
@@ -1188,7 +1182,16 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             }
 
             executeAction(editor, KakAction.CLOSE_MENU, false)
+            if (closeEditor) {
+                executeAction(editor, "CloseAllEditors")
 
+                val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
+                    e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                val file = window.selectedFile
+                if (file != null) {
+                    window.requestFocus(true)
+                }
+            }
 //            if (prev)
 //                ApplicationManager.getApplication().invokeLater {
 //                    val e = CommonDataKeys.EDITOR.getData(e.dataContext)
@@ -1216,7 +1219,7 @@ private fun createEditorContext(editor: Editor): DataContext {
 fun executeAction(editor: Editor, actionId: String, assertActionIsEnabled: Boolean) {
     val actionManager = ActionManagerEx.getInstanceEx()
     val action = actionManager.getAction(actionId)
-    Assert.assertNotNull(action)
+//    Assert.assertNotNull(action)
 
     val event = AnActionEvent.createFromAnAction(action, null, "", createEditorContext(editor))
     if (ActionUtil.lastUpdateAndCheckDumb(action, event, false)) {

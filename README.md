@@ -7,7 +7,7 @@ KakouneBrain
 
 A Kakoune inspired modal text editing plugin for Jetbrains IDEs
 
-KakouneBrain supports many Kakoune features including normal/insert modes, motion keys, deletion/changing, macros etc. Contributions which get us closer to feature parity with kakoune, or bug fixes, are welcome.
+KakouneBrain supports many Kakoune features including normal/insert modes, motion keys, deletion/changing, macros etc. Contributions which get us closer to feature parity with [Kakoune](https://kakoune.org/) or bug fixes, are welcome.
 
 <img src="assets/screenshot1.png" alt="screenshot of goto menu"/>
 

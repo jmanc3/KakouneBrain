@@ -5,7 +5,7 @@ plugins {
 }
 
 group = "com.jmanc3"
-version = "1.0-SNAPSHOT"
+version = "1.0.0"
 
 repositories {
     mavenCentral()
@@ -32,7 +32,7 @@ tasks {
 
     patchPluginXml {
         sinceBuild.set("231")
-        untilBuild.set("231.*")
+        untilBuild.set("")
     }
 
     signPlugin {

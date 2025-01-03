@@ -1,6 +1,6 @@
 package com.jmanc3.kakounebrain.input;
 
-import com.intellij.ide.IdeEventQueue;
+//import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.application.ApplicationManager;
@@ -9,10 +9,11 @@ import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.ActionPlan;
 import com.intellij.openapi.editor.actionSystem.TypedActionHandlerEx;
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider;
-import com.intellij.openapi.keymap.impl.IdeKeyEventDispatcher;
+//import com.intellij.openapi.keymap.impl.IdeKeyEventDispatcher;
 import com.intellij.openapi.project.DumbAware;
 import com.intellij.util.messages.MessageBusConnection;
 import com.jmanc3.kakounebrain.KakOnFileOpen;
+import com.jmanc3.kakounebrain.KeyboardBindings;
 import com.jmanc3.kakounebrain.PluginStartup;
 import com.jmanc3.kakounebrain.input.implementation.KakFunctions;
 import com.jmanc3.kakounebrain.input.implementation.MacroRenderer;
@@ -101,13 +102,13 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
         connection.subscribe(AnActionListener.TOPIC, new AnActionListener() {
             @Override
             public void beforeShortcutTriggered(@NotNull Shortcut shortcut, @NotNull List<AnAction> actions, @NotNull DataContext dataContext) {
-                IdeEventQueue ideEventQueue = IdeEventQueue.getInstance();
-                IdeKeyEventDispatcher keyEventDispatcher = ideEventQueue.getKeyEventDispatcher();
-                KeyEvent inputEvent = keyEventDispatcher.getContext().getInputEvent();
-
-                if (recordingMacro) {
-                    macroActions.add(new MacroActions(MacroActionsType.Shortcut, inputEvent));
-                }
+//                IdeEventQueue ideEventQueue = IdeEventQueue.getInstance();
+//                IdeKeyEventDispatcher keyEventDispatcher = ideEventQueue.getKeyEventDispatcher();
+//                KeyEvent inputEvent = keyEventDispatcher.getContext().getInputEvent();
+//
+//                if (recordingMacro) {
+//                    macroActions.add(new MacroActions(MacroActionsType.Shortcut, inputEvent));
+//                }
             }
 
             @Override
@@ -115,9 +116,14 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
                 if (result.isPerformed()) {
                     if (recordingMacro) {
                         var actionId = ActionManager.getInstance().getId(action);
-                        if (actionId != null && actionId.equals("SearchEverywhere")) {
-                            macroActions.add(new MacroActions(MacroActionsType.ActionText, "SearchEverywhere"));
+                        if (actionId != null && !actionId.equals(KeyboardBindings.KakAction.START_STOP_MACRO)) {
+                            macroActions.add(new MacroActions(MacroActionsType.ActionText, actionId));
                         }
+//                        if (actionId != null && actionId.equals("SearchEverywhere")) {
+//                            macroActions.add(new MacroActions(MacroActionsType.ActionText, "SearchEverywhere"));
+//                        }
+//                        if (actionId != null && actionId.equals("SearchEverywhere")) {
+//                        }
                     }
                 }
             }

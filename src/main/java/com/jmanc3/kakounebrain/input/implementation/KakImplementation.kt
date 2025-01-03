@@ -18,13 +18,11 @@ import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.content.ContentManagerUtil
-import com.intellij.util.PlatformUtils
 import com.jmanc3.kakounebrain.KakOnFileOpen
 import com.jmanc3.kakounebrain.KeyboardBindings.KakAction
 import com.jmanc3.kakounebrain.KeyboardBindings.NormalModeCommands
 import com.jmanc3.kakounebrain.PluginStartup
 import com.jmanc3.kakounebrain.input.KakInput
-//import com.jmanc3.kakounebrain.input.implementation.other.KakFindUtil
 import com.jmanc3.kakounebrain.input.implementation.other.State
 import java.awt.event.KeyEvent
 import java.util.concurrent.Callable
@@ -966,9 +964,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         KakInput.getInstance().menuRenderer.text.add("b:   window bottom")
         KakInput.getInstance().menuRenderer.text.add("c:   window center")
         KakInput.getInstance().menuRenderer.text.add("a:   previous file")
-        if (PlatformUtils.isCLion()) {
-            KakInput.getInstance().menuRenderer.text.add("m:   matching .cpp/.h")
-        }
+        KakInput.getInstance().menuRenderer.text.add("m:   matching .cpp/.h")
         KakInput.getInstance().menuRenderer.text.add("f:   class under cursor")
         KakInput.getInstance().menuRenderer.text.add(".:   last text change")
         KakInput.getInstance().menuRenderer.text.add("d:   declaration/usage")
@@ -1067,11 +1063,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 }
 
                 'm' -> {
-                    if (PlatformUtils.isCLion()) {
-                        executeAction(editor, "CIDR.Lang.SwitchHeaderSource", false);
-                    } else {
-                        ate = false;
-                    }
+                    executeAction(editor, "CIDR.Lang.SwitchHeaderSource", false);
                 }
 
                 'f' -> {

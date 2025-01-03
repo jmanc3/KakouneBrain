@@ -30,24 +30,24 @@ public class InterceptedAction extends AnAction {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.update(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.update(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, false);
             return;
         }
         State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
         if (editorState == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.update(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.update(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, false);
             return;
         }
 
         if (applicableMode != editorState.mode || applicableMode == State.Mode.ALL) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.update(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.update(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, false);
         }
     }
@@ -57,24 +57,25 @@ public class InterceptedAction extends AnAction {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.beforeActionPerformedUpdate(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.beforeActionPerformedUpdate(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, true);
             return;
         }
         State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
         if (editorState == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.beforeActionPerformedUpdate(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.beforeActionPerformedUpdate(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, true);
             return;
         }
 
         if (applicableMode != editorState.mode || applicableMode == State.Mode.ALL) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.beforeActionPerformedUpdate(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            beforeActionPerformedUpdate(e);
+//            action.beforeActionPerformedUpdate(e);
         }
     }
 
@@ -83,15 +84,15 @@ public class InterceptedAction extends AnAction {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.actionPerformed(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.actionPerformed(e);
             return;
         }
         State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
         if (editorState == null) {
             e.getPresentation().setEnabled(true);
-            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-            action.actionPerformed(e);
+//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
+//            action.actionPerformed(e);
             return;
         }
 

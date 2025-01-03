@@ -14,7 +14,7 @@
          Simple HTML elements (text formatting, paragraphs, and lists) can be added inside of <![CDATA[ ]]> tag.
          Guidelines: https://plugins.jetbrains.com/docs/marketplace/plugin-overview-page.html#plugin-description -->
     <description><![CDATA[
-<p>Adds Kakoune inspired modal text editing to Jetbrains IDEs</p>
+<p>Adds Kakoune inspired modal text editing to Jetbrains IDEs.</p>
 <br/>
 <p>KakouneBrain supports many Kakoune features including normal/insert modes, motion keys, deletion/changing, macros etc. Contributions which get us closer to feature parity with <a href="https://kakoune.org/">Kakoune</a> are welcome.</p>
 <br/>

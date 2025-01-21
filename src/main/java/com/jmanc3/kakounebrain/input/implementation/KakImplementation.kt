@@ -292,8 +292,19 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             }
 
             KakAction.SELECT_CURRENT_LINE -> {
-                EditorActionUtil.moveCaretToLineStartIgnoringSoftWraps(editor)
-                executeAction(editor, KakAction.SWAP_SELECTION_BOUNDARIES, false)
+                for (caret in editor.caretModel.allCarets) {
+                    var moveToEnd = true
+                    if (caret.hasSelection() && caret.selectionStart == caret.offset) {
+                        moveToEnd = false
+                    }
+                    EditorActionUtil.selectEntireLines(caret)
+                    val lineOffset = if (moveToEnd) {
+                        editor.document.getLineEndOffset(caret.logicalPosition.line)
+                    } else {
+                        editor.document.getLineStartOffset(caret.logicalPosition.line)
+                    }
+                    caret.moveToOffset(lineOffset)
+                }
             }
 
             KakAction.GOTO_LINE_END_AND_INSERT -> {

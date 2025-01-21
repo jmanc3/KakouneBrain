@@ -30,6 +30,8 @@ KakouneBrain supports many Kakoune features including normal/insert modes, motio
 | move back until first blank line + increase selection |   alt+shift+k    | move forward until first blank line + increase selection  |      alt+shift+j      |
 | move up 10 lines                                      |      ctrl+k      |                    move down 10 lines                     |        ctrl+j         |
 | move up 10 lines + increase selection                 |   ctrl+shift+k   |          move down 10 lines + increase selection          |     ctrl+shift+j      |
+| page up                                               |      ctrl+u      |               page up + increase selection                |        ctrl+U         |
+| page down                                             |      ctrl+d      |              page down + increase selection               |        ctrl+D         |
 | open goto menu                                        |        g         |               open goto menu with selection               |           G           |
 | close non-editor tabs                                 |        `         |            swap cursor location (on selection)            |           ;           |
 | toggle zen mode                                       |        z         |                  open default find menu                   |           /           |

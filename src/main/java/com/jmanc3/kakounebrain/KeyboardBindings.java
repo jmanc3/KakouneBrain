@@ -147,6 +147,12 @@ public class KeyboardBindings {
             {IdeActions.ACTION_MOVE_STATEMENT_UP_ACTION, sc(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
             {IdeActions.ACTION_MOVE_STATEMENT_DOWN_ACTION, sc(KeyEvent.VK_J, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
 
+            {IdeActions.ACTION_EDITOR_MOVE_CARET_PAGE_DOWN, sc(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK), true},
+            {IdeActions.ACTION_EDITOR_MOVE_CARET_PAGE_UP, sc(KeyEvent.VK_U, InputEvent.CTRL_DOWN_MASK), true},
+
+            {IdeActions.ACTION_EDITOR_MOVE_CARET_PAGE_DOWN_WITH_SELECTION, sc(KeyEvent.VK_D, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), true},
+            {IdeActions.ACTION_EDITOR_MOVE_CARET_PAGE_UP_WITH_SELECTION, sc(KeyEvent.VK_U, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), true},
+
             {KakAction.MOVE_UP_10, sc(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK), true},
             {KakAction.MOVE_DOWN_10, sc(KeyEvent.VK_J, InputEvent.CTRL_DOWN_MASK), true},
             {KakAction.MOVE_UP_10_WITH_SELECTION, sc(KeyEvent.VK_K, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), true},

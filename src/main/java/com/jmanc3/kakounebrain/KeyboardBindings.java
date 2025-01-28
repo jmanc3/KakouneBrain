@@ -68,10 +68,13 @@ public class KeyboardBindings {
         String FIND_REVERSE_COVER_INCREASE_SELECTION = "FIND_REVERSE_COVER_INCREASE_SELECTION";
         String FIND_REVERSE_AHEAD_INCREASE_SELECTION = "FIND_REVERSE_AHEAD_INCREASE_SELECTION";
         String NEXT_ITEM = "NEXT_ITEM";
+        String KAK_YANK = "KAK_YANK";
         String PREVIOUS_ITEM = "PREVIOUS_ITEM";
         String ESCAPE_INSERT_MODE = "ESCAPE_INSERT_MODE";
         String START_STOP_MACRO = "START_STOP_MACRO";
         String PLAY_PREVIOUS_MACRO = "PLAY_PREVIOUS_MACRO";
+        String INDENT_LEFT = "INDENT_LEFT";
+        String INDENT_RIGHT = "INDENT_RIGHT";
     }
 
     public static Object[][] CustomKakActions = {
@@ -121,10 +124,13 @@ public class KeyboardBindings {
             {KakAction.FIND_REVERSE_COVER_INCREASE_SELECTION, new KakCommand(KakAction.FIND_REVERSE_COVER_INCREASE_SELECTION)},
             {KakAction.FIND_REVERSE_AHEAD_INCREASE_SELECTION, new KakCommand(KakAction.FIND_REVERSE_AHEAD_INCREASE_SELECTION)},
             {KakAction.NEXT_ITEM, new KakCommand(KakAction.NEXT_ITEM)},
+            {KakAction.KAK_YANK, new KakCommand(KakAction.KAK_YANK)},
             {KakAction.PREVIOUS_ITEM, new KakCommand(KakAction.PREVIOUS_ITEM)},
             {KakAction.ESCAPE_INSERT_MODE, new KakCommand(KakAction.ESCAPE_INSERT_MODE)},
             {KakAction.START_STOP_MACRO, new KakCommand(KakAction.START_STOP_MACRO)},
             {KakAction.PLAY_PREVIOUS_MACRO, new KakCommand(KakAction.PLAY_PREVIOUS_MACRO)},
+            {KakAction.INDENT_LEFT, new KakCommand(KakAction.INDENT_LEFT)},
+            {KakAction.INDENT_RIGHT, new KakCommand(KakAction.INDENT_RIGHT)},
     };
 
     /**
@@ -159,7 +165,7 @@ public class KeyboardBindings {
             {KakAction.MOVE_DOWN_10_WITH_SELECTION, sc(KeyEvent.VK_J, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), true},
 
             {KakAction.PREVIOUS_INSTANCE_OF_SELECTION, sc(KeyEvent.VK_N, InputEvent.ALT_DOWN_MASK), true},
-            {KakAction.MENU_OPEN_PANEL, sc(KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK), true},
+            {KakAction.MENU_OPEN_PANEL, sc(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK), true},
 
             {KakAction.GO_TO_FILE, sc(KeyEvent.VK_I, InputEvent.CTRL_DOWN_MASK), true},
             {KakAction.MENU_REFACTOR, sc(KeyEvent.VK_R, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
@@ -241,7 +247,7 @@ public class KeyboardBindings {
             {"P", KakAction.PASTE_BEFORE_SELECTION},
             {"p", KakAction.PASTE_AFTER_SELECTION},
 
-            {"y", IdeActions.ACTION_EDITOR_COPY},
+            {"y", KakAction.KAK_YANK},
 
             {"q", KakAction.PLAY_PREVIOUS_MACRO},
             {"Q", KakAction.START_STOP_MACRO},
@@ -260,7 +266,9 @@ public class KeyboardBindings {
             {".", KakAction.MENU_MISC},
 
             {",", "NextSplitter"},
-            {"<", "PrevSplitter"},
+
+            {"<", KakAction.INDENT_LEFT},
+            {">", KakAction.INDENT_RIGHT},
     };
 
     /**

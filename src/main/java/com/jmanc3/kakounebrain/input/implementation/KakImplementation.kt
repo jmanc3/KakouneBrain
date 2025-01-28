@@ -24,6 +24,7 @@ import com.jmanc3.kakounebrain.KeyboardBindings.NormalModeCommands
 import com.jmanc3.kakounebrain.PluginStartup
 import com.jmanc3.kakounebrain.input.KakInput
 import com.jmanc3.kakounebrain.input.implementation.other.State
+import org.intellij.markdown.html.isWhitespace
 import java.awt.event.KeyEvent
 import java.util.concurrent.Callable
 
@@ -574,6 +575,18 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
 
             KakAction.GOTO_MENU -> {
                 openGotoMenu(false, editor)
+            }
+
+            KakAction.KAK_YANK -> {
+                executeAction(editor, "EditorCopy");
+            }
+
+            KakAction.INDENT_LEFT -> {
+                executeAction(editor, IdeActions.ACTION_EDITOR_UNINDENT_SELECTION)
+            }
+
+            KakAction.INDENT_RIGHT -> {
+                executeAction(editor, "EditorIndentLineOrSelection")
             }
 
             "KakEditorForwardParagraphWithSelection" -> {

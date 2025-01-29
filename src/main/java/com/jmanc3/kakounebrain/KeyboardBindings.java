@@ -165,7 +165,7 @@ public class KeyboardBindings {
             {KakAction.MOVE_DOWN_10_WITH_SELECTION, sc(KeyEvent.VK_J, InputEvent.CTRL_DOWN_MASK | InputEvent.SHIFT_DOWN_MASK), true},
 
             {KakAction.PREVIOUS_INSTANCE_OF_SELECTION, sc(KeyEvent.VK_N, InputEvent.ALT_DOWN_MASK), true},
-            {KakAction.MENU_OPEN_PANEL, sc(KeyEvent.VK_P, InputEvent.CTRL_DOWN_MASK), true},
+            {KakAction.MENU_OPEN_PANEL, sc(KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK), true},
 
             {KakAction.GO_TO_FILE, sc(KeyEvent.VK_I, InputEvent.CTRL_DOWN_MASK), true},
             {KakAction.MENU_REFACTOR, sc(KeyEvent.VK_R, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},

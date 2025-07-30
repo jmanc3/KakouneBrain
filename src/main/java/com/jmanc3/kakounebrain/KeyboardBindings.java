@@ -56,7 +56,7 @@ public class KeyboardBindings {
         String SWAP_SELECTION_BOUNDARIES = "SWAP_SELECTION_BOUNDARIES";
         String NO_OP = "NO_OP";
         String GO_TO_FILE = "GO_TO_FILE";
-        String MENU_REFACTOR = "MENU_REFACTOR";
+        //String MENU_REFACTOR = "MENU_REFACTOR";
         String MENU_VIEW = "MENU_VIEW";
         String MENU_MISC = "MENU_MISC";
         String FIND_FORWARD_COVER = "FIND_FORWARD_COVER";
@@ -112,7 +112,7 @@ public class KeyboardBindings {
             {KakAction.NO_OP, new KakCommand(KakAction.NO_OP)},
             {KakAction.SWAP_SELECTION_BOUNDARIES, new KakCommand(KakAction.SWAP_SELECTION_BOUNDARIES)},
             {KakAction.GO_TO_FILE, new KakCommand(KakAction.GO_TO_FILE)},
-            {KakAction.MENU_REFACTOR, new KakCommand(KakAction.MENU_REFACTOR)},
+            //{KakAction.MENU_REFACTOR, new KakCommand(KakAction.MENU_REFACTOR)},
             {KakAction.MENU_VIEW, new KakCommand(KakAction.MENU_VIEW)},
             {KakAction.MENU_MISC, new KakCommand(KakAction.MENU_MISC)},
             {KakAction.FIND_FORWARD_COVER, new KakCommand(KakAction.FIND_FORWARD_COVER)},
@@ -168,7 +168,7 @@ public class KeyboardBindings {
             {KakAction.MENU_OPEN_PANEL, sc(KeyEvent.VK_P, InputEvent.ALT_DOWN_MASK), true},
 
             {KakAction.GO_TO_FILE, sc(KeyEvent.VK_I, InputEvent.CTRL_DOWN_MASK), true},
-            {KakAction.MENU_REFACTOR, sc(KeyEvent.VK_R, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
+            //{KakAction.MENU_REFACTOR, sc(KeyEvent.VK_R, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
 
             {KakAction.FIND_REVERSE_COVER_INCREASE_SELECTION, sc(KeyEvent.VK_F, InputEvent.SHIFT_DOWN_MASK | InputEvent.ALT_DOWN_MASK), true},
 
@@ -310,7 +310,7 @@ public class KeyboardBindings {
 
             {"RenameElement", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "RenameElement"},
             {"IntroduceVariable", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceVariable"},
-            {"refactoring.introduce.property", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "refactoring.introduce.property"},
+            //{"refactoring.introduce.property", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "refactoring.introduce.property"},
             {"IntroduceField", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceField"},
             {"IntroduceProperty", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceProperty"},
             {"IntroduceFunctionalParameter", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceFunctionalParameter"},

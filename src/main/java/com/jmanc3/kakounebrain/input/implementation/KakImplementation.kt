@@ -357,9 +357,9 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 openMiscMenu(editor)
             }
 
-            KakAction.MENU_REFACTOR -> {
+            /*KakAction.MENU_REFACTOR -> {
                 openRefactorMenu(editor)
-            }
+            }*/
 
             KakAction.PLAY_PREVIOUS_MACRO -> {
                 val kakInput = KakInput.getInstance()

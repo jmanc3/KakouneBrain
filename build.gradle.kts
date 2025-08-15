@@ -4,8 +4,9 @@ plugins {
     id("org.jetbrains.intellij") version "1.16.0"
 }
 
+//IDEA 2024.3.3
 group = "com.jmanc3"
-version = "1.0.5"
+version = "1.0.6"
 
 repositories {
     mavenCentral()
@@ -14,7 +15,10 @@ repositories {
 // Configure Gradle IntelliJ Plugin
 // Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
 intellij {
-    version.set("2023.1")
+    //type.set("CL") // Target IDE Platform
+    //version.set("2025.1.3")
+    version.set("2024.3.3")
+    //version.set("2023.1")
     type.set("IC") // Target IDE Platform
 
     plugins.set(listOf(/* Plugin Dependencies */))

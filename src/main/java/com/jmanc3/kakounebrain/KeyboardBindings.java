@@ -308,14 +308,14 @@ public class KeyboardBindings {
 //            {"EditorDeleteToWordStart", State.Mode.NORMAL},
 //            {"EditorDeleteToWordEnd", State.Mode.NORMAL},
 
-            {"RenameElement", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "RenameElement"},
-            {"IntroduceVariable", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceVariable"},
+            //{"RenameElement", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "RenameElement"},
+            //{"IntroduceVariable", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceVariable"},
             //{"refactoring.introduce.property", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "refactoring.introduce.property"},
-            {"IntroduceField", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceField"},
-            {"IntroduceProperty", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceProperty"},
-            {"IntroduceFunctionalParameter", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceFunctionalParameter"},
-            {"IntroduceTypeAlias", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceTypeAlias"},
-            {"IntroduceConstant", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceConstant"},
+            //{"IntroduceField", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceField"},
+            //{"IntroduceProperty", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceProperty"},
+            //{"IntroduceFunctionalParameter", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceFunctionalParameter"},
+            //{"IntroduceTypeAlias", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceTypeAlias"},
+            //{"IntroduceConstant", State.Mode.NORMAL, KakAction.SAVE_MODE, KakAction.SET_MODE_INSERT, "IntroduceConstant"},
 
     };
 }

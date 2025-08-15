@@ -15,7 +15,6 @@ import com.intellij.openapi.editor.ex.EditorEx
 import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
-import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.content.ContentManagerUtil
 import com.jmanc3.kakounebrain.KakOnFileOpen
@@ -373,8 +372,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                             if (c == 'Q' && editorState.mode == State.Mode.NORMAL)
                                 continue;
                             // TODO: it should execute not in the editor but in whatever the current context is of the project
-                            val instance = TextEditorProvider.getInstance()
-
+                            //val instance = TextEditorProvider.getInstance()
                             // get the current editor
 //                            var current_editor = instance.getTextEditor();
 

@@ -4,6 +4,7 @@ package com.jmanc3.kakounebrain.input;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.application.WriteIntentReadAction;
 import com.intellij.openapi.command.undo.UndoManager;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.ActionPlan;
@@ -161,7 +162,8 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
         KakInput.getInstance().c = charTyped;
         if (someoneWantsKeyPress != null) {
             try {
-                Boolean consumed = someoneWantsKeyPress.call();
+                // Raw typing callbacks may run without write intent; menu commands access live editor state.
+                Boolean consumed = WriteIntentReadAction.computeThrowable(() -> someoneWantsKeyPress.call());
                 if (consumed) {
                     return;
                 }

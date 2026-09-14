@@ -26,6 +26,11 @@ public class InterceptedAction extends AnAction {
     }
 
     @Override
+    public @NotNull ActionUpdateThread getActionUpdateThread() {
+        return ActionUpdateThread.EDT;
+    }
+
+    @Override
     public void update(@NotNull AnActionEvent e) {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
         if (editor == null) {
@@ -49,33 +54,6 @@ public class InterceptedAction extends AnAction {
 //            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
 //            action.update(e);
 //            ActionUtil.performDumbAwareUpdate(action, e, false);
-        }
-    }
-
-    @Override
-    public void beforeActionPerformedUpdate(@NotNull AnActionEvent e) {
-        Editor editor = e.getData(CommonDataKeys.EDITOR);
-        if (editor == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.beforeActionPerformedUpdate(e);
-//            ActionUtil.performDumbAwareUpdate(action, e, true);
-            return;
-        }
-        State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
-        if (editorState == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.beforeActionPerformedUpdate(e);
-//            ActionUtil.performDumbAwareUpdate(action, e, true);
-            return;
-        }
-
-        if (applicableMode != editorState.mode || applicableMode == State.Mode.ALL) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            beforeActionPerformedUpdate(e);
-//            action.beforeActionPerformedUpdate(e);
         }
     }
 
@@ -120,12 +98,8 @@ public class InterceptedAction extends AnAction {
     }
 
     public static void executeAction(@NotNull Editor editor, boolean assertActionIsEnabled, @NotNull AnAction action) {
-        AnActionEvent event = AnActionEvent.createFromAnAction(action, null, "", createEditorContext(editor));
-        if (ActionUtil.lastUpdateAndCheckDumb(action, event, false)) {
-            ActionUtil.performActionDumbAwareWithCallbacks(action, event);
-        } else if (assertActionIsEnabled) {
-//            fail("Action " + action + " is disabled");
-        }
+        AnActionEvent event = AnActionEvent.createEvent(action, createEditorContext(editor), null, "", ActionUiKind.NONE, null);
+        ActionUtil.performAction(action, event);
     }
 
     @NotNull

@@ -89,7 +89,7 @@ public class PluginStartup implements ProjectActivity, DumbAware, Disposable {
              * (Maybe they thought if they made it that bad, no one would want to use it,
              * and they wouldn't have to fix any bugs associated with it)
              */
-            Registry.get("actionSystem.playback.typecommand.delay").setValue(0);
+            Registry.get("actionSystem.playback.typecommand.delay").setValue(1);
             Registry.get("editor.block.caret.selection.vim-like").setValue(true);
 
             /**

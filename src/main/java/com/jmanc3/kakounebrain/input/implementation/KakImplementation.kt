@@ -8,22 +8,23 @@ import com.intellij.openapi.actionSystem.*
 import com.intellij.openapi.actionSystem.ex.ActionManagerEx
 import com.intellij.openapi.actionSystem.ex.ActionUtil
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.WriteIntentReadAction
 import com.intellij.openapi.editor.*
 import com.intellij.openapi.editor.actionSystem.ActionPlan
 import com.intellij.openapi.editor.actions.EditorActionUtil
 import com.intellij.openapi.editor.ex.EditorEx
-import com.intellij.openapi.editor.ex.EditorSettingsExternalizable
 import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.TextEditor
 import com.intellij.openapi.project.DumbAware
 import com.intellij.ui.content.ContentManagerUtil
+import com.intellij.util.text.StringSearcher
 import com.jmanc3.kakounebrain.KakOnFileOpen
 import com.jmanc3.kakounebrain.KeyboardBindings.KakAction
 import com.jmanc3.kakounebrain.KeyboardBindings.NormalModeCommands
 import com.jmanc3.kakounebrain.PluginStartup
 import com.jmanc3.kakounebrain.input.KakInput
 import com.jmanc3.kakounebrain.input.implementation.other.State
-import org.intellij.markdown.html.isWhitespace
 import java.awt.event.KeyEvent
 import java.util.concurrent.Callable
 
@@ -57,14 +58,9 @@ class KakFunctions {
 
 }
 
-private var originalOffset: Int = 0
-private var selectionStartBefore: Int = 0
-private var onLeftEdge: Boolean = false
-private var startedWithSelection: Boolean = false
-
 class KakCommand(val type: String) : AnAction(), DumbAware {
 
-    // Crucial or will get massive lag
+    // Updates inspect live caret, selection, and lookup UI state, so they must stay on EDT.
     override fun getActionUpdateThread(): ActionUpdateThread {
         return ActionUpdateThread.EDT;
     }
@@ -126,26 +122,18 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
     }
 
     override fun actionPerformed(e: AnActionEvent) {
+        ApplicationManager.getApplication().assertIsDispatchThread()
+        // Like EditorAction, acquire write intent explicitly: EDT actions can run without it.
+        // Delegated editor actions acquire their own write actions and undo commands.
+        WriteIntentReadAction.run { performEditorAction(e) }
+    }
+
+    private fun performEditorAction(e: AnActionEvent) {
         val editor = CommonDataKeys.EDITOR.getData(e.dataContext) ?: return
+        if (editor.isDisposed) return
         val editorState = editor.getUserData(KakOnFileOpen.kakStateKey) ?: return
 
-        fun scrollIntoView() {
-            val savedSetting = EditorSettingsExternalizable.getInstance().isRefrainFromScrolling
-            var overriddenInEditor = false
-            try {
-                EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = false
-                if (editor.settings.isRefrainFromScrolling) {
-                    overriddenInEditor = true
-                    editor.settings.isRefrainFromScrolling = false
-                }
-                editor.scrollingModel.scrollToCaret(ScrollType.MAKE_VISIBLE)
-            } finally {
-                EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = savedSetting
-                if (overriddenInEditor) {
-                    editor.settings.isRefrainFromScrolling = true
-                }
-            }
-        }
+        fun scrollIntoView() = scrollCaret(editor, ScrollType.MAKE_VISIBLE)
 
         when (type) {
             KakAction.SET_MODE_INSERT -> {
@@ -174,38 +162,30 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
 
             KakAction.NEXT_WORD -> {
                 editor.caretModel.runForEachCaret {
-                    seekToken(e, Motion.Right, true, it)
-                    val caretModel = editor.caretModel
-                    caretModel.moveToOffset(caretModel.offset) // Ensure caret position is updated
-                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    seekToken(editor, Motion.Right, true, it)
                 }
+                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
             }
 
             KakAction.PREVIOUS_WORD -> {
                 editor.caretModel.runForEachCaret {
-                    seekToken(e, Motion.Left, true, it)
-                    val caretModel = editor.caretModel
-                    caretModel.moveToOffset(caretModel.offset) // Ensure caret position is updated
-                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    seekToken(editor, Motion.Left, true, it)
                 }
+                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
             }
 
             KakAction.NEXT_WORD_WITH_SELECTION -> {
                 editor.caretModel.runForEachCaret {
-                    seekToken(e, Motion.Right, false, it)
-                    val caretModel = editor.caretModel
-                    caretModel.moveToOffset(caretModel.offset) // Ensure caret position is updated
-                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    seekToken(editor, Motion.Right, false, it)
                 }
+                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
             }
 
             KakAction.PREVIOUS_WORD_WITH_SELECTION -> {
                 editor.caretModel.runForEachCaret {
-                    seekToken(e, Motion.Left, false, it)
-                    val caretModel = editor.caretModel
-                    caretModel.moveToOffset(caretModel.offset) // Ensure caret position is updated
-                    editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
+                    seekToken(editor, Motion.Left, false, it)
                 }
+                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
             }
 
             KakAction.DELETE -> {
@@ -271,7 +251,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             }
 
             KakAction.PASTE_AFTER_SELECTION -> {
-                beforeSelectionMovement(editor)
+                val movement = SelectionMovement(editor)
                 val offsetStart = editor.caretModel.offset
                 val selectionStart = editor.selectionModel.selectionStart
                 val selectionEnd = editor.selectionModel.selectionEnd
@@ -288,7 +268,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
 
                 editor.caretModel.moveToOffset(offsetStart)
                 editor.selectionModel.setSelection(selectionStart, selectionEnd)
-                afterSelectionMovement(editor)
+                movement.finish(editor)
             }
 
             KakAction.SELECT_CURRENT_LINE -> {
@@ -392,7 +372,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                             event.component,
                             event.id,
                             event.`when`,
-                            event.modifiers,
+                            event.modifiersEx,
                             event.keyCode,
                             event.keyChar,
                             event.keyLocation
@@ -467,7 +447,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             }
 
             KakAction.MOVE_UP_10_WITH_SELECTION -> {
-                beforeSelectionMovement(editor)
+                val movement = SelectionMovement(editor)
                 val selectionStart = editor.selectionModel.leadSelectionOffset
                 val column = editor.caretModel.logicalPosition.column
                 val pos = LogicalPosition((editor.caretModel.logicalPosition.line - 10).coerceAtLeast(0), column)
@@ -476,11 +456,11 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 editor.selectionModel.setSelection(
                     selectionStart, editor.caretModel.visualPosition, editor.caretModel.offset
                 )
-                afterSelectionMovement(editor)
+                movement.finish(editor)
             }
 
             KakAction.MOVE_DOWN_10_WITH_SELECTION -> {
-                beforeSelectionMovement(editor)
+                val movement = SelectionMovement(editor)
                 val selectionStart = editor.selectionModel.leadSelectionOffset
                 val column = editor.caretModel.logicalPosition.column
                 val pos = LogicalPosition(editor.caretModel.logicalPosition.line + 10, column)
@@ -489,7 +469,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 editor.selectionModel.setSelection(
                     selectionStart, editor.caretModel.visualPosition, editor.caretModel.offset
                 )
-                afterSelectionMovement(editor)
+                movement.finish(editor)
             }
 
             KakAction.SAVE_MODE -> {
@@ -646,23 +626,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         }
     }
 
-    fun scrollToCenter(editor: Editor) {
-        val savedSetting = EditorSettingsExternalizable.getInstance().isRefrainFromScrolling
-        var overriddenInEditor = false
-        try {
-            EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = false
-            if (editor.settings.isRefrainFromScrolling) {
-                overriddenInEditor = true
-                editor.settings.isRefrainFromScrolling = false
-            }
-            editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
-        } finally {
-            EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = savedSetting
-            if (overriddenInEditor) {
-                editor.settings.isRefrainFromScrolling = true
-            }
-        }
-    }
+    fun scrollToCenter(editor: Editor) = scrollCaret(editor, ScrollType.CENTER)
 
     private fun ensureCaretFullyVisible(editor: Editor) {
         val caretModel = editor.caretModel
@@ -689,67 +653,45 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         // replace all ide with selection moves with a Kak_ action which after executing the original move,
         // makes the original offset+1, and the current offset+1 a part of the selection.
         // if the new total selection size is 1, it removes the selection.
-        beforeSelectionMovement(editor)
+        val movement = SelectionMovement(editor)
         executeAction(editor, originalAction, false)
-        afterSelectionMovement(editor)
+        movement.finish(editor)
 
         ensureCaretFullyVisible(editor)
     }
 
-    private fun textMatchesAt(text: String, pattern: CharArray, startIndex: Int): Boolean {
-        if (startIndex + pattern.size > text.length) {
-            // If the pattern went out of bounds, it can't match
-            return false
-        }
-
-        for (i in pattern.indices) {
-            if (text[startIndex + i] != pattern[i]) {
-                return false
-            }
-        }
-        return true
-    }
-
-    private var previous_search: CharArray = charArrayOf()
+    private var previousSearch = ""
 
     private fun KakFindUtildoSearch(editor: Editor, forward: Boolean) {
-        val text = editor.document.text
-        for (caret in editor.caretModel.allCarets) {
-            val currentCaretOffset = caret.offset
-            var selectionStart = caret.selectionStart
-            var selectionEnd = caret.selectionEnd
-            var selectionText = editor.document.text.toCharArray(selectionStart, selectionEnd)
-            if (selectionStart == selectionEnd && previous_search.isNotEmpty()) {
-                selectionText = previous_search
-                selectionStart = 0
-                selectionEnd = previous_search.size
+        val text = editor.document.charsSequence
+        val searchers = mutableMapOf<String, StringSearcher>()
+        editor.caretModel.runForEachCaret { caret ->
+            val offset = caret.offset
+            val selectionStart = caret.selectionStart
+            val keepCaretAtStart = if (caret.hasSelection()) offset == selectionStart else offset == 0
+            val pattern = if (caret.hasSelection()) {
+                text.subSequence(selectionStart, caret.selectionEnd).toString()
+            } else {
+                previousSearch
             }
-            previous_search = selectionText
-
-            for (i in text.indices) {
-                var index = i + currentCaretOffset + 1
-                if (index > text.length - 1)
-                    index -= text.length
-                if (!forward) {
-                    index = currentCaretOffset - i - (selectionEnd - selectionStart) - 1
-                    if (index < 0)
-                        index += text.length
-                }
-
-                if (textMatchesAt(text, selectionText, index)) {
-                    caret.setSelection(index, index + (selectionEnd - selectionStart))
-                    if (currentCaretOffset == selectionStart) {
-                        caret.moveToOffset(index)
-                    } else {
-                        caret.moveToOffset(index + (selectionEnd - selectionStart) - 1)
-                    }
-                    break
-                }
+            if (pattern.isEmpty()) return@runForEachCaret
+            previousSearch = pattern
+            val searcher = searchers.getOrPut(pattern) {
+                StringSearcher(pattern, true, forward)
+            }
+            // Search in the requested direction, then wrap without matching across EOF.
+            var index = if (forward) {
+                searcher.scan(text, (offset + 1).coerceAtMost(text.length), text.length)
+            } else {
+                searcher.scan(text, 0, (offset - 1).coerceAtLeast(0))
+            }
+            if (index < 0) index = searcher.scan(text)
+            if (index >= 0) {
+                caret.setSelection(index, index + pattern.length)
+                caret.moveToOffset(if (keepCaretAtStart) index else index + pattern.length - 1)
             }
         }
-        val scrollingModel = editor.scrollingModel
-        val scrollType = if (forward) ScrollType.CENTER_DOWN else ScrollType.CENTER_UP
-        scrollingModel.scrollToCaret(scrollType)
+        editor.scrollingModel.scrollToCaret(if (forward) ScrollType.CENTER_DOWN else ScrollType.CENTER_UP)
     }
 
     private fun openMiscMenu(editor: Editor) {
@@ -867,7 +809,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         KakInput.getInstance().someoneWantsKeyPress = Callable {
             val key = KakInput.getInstance().c
 
-            val text = editor.document.text
+            val text = editor.document.charsSequence
             for (caret in editor.caretModel.allCarets) {
                 val currentCaretOffset = caret.offset
                 val selectionStart = caret.selectionStart
@@ -972,7 +914,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
     private fun openGotoMenu(increaseSelection: Boolean, editor: Editor) {
         val editorState = editor.getUserData(KakOnFileOpen.kakStateKey) ?: return
 
-        beforeSelectionMovement(editor)
+        val movement = SelectionMovement(editor)
 
         KakInput.getInstance().menuRenderer.text.clear()
         KakInput.getInstance().menuRenderer.text.add("goto")
@@ -992,23 +934,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         KakInput.getInstance().menuRenderer.text.add("d:   declaration/usage")
         KakInput.getInstance().menuRenderer.showIt(editor)
 
-        fun scrollToCenter() {
-            val savedSetting = EditorSettingsExternalizable.getInstance().isRefrainFromScrolling
-            var overriddenInEditor = false
-            try {
-                EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = false
-                if (editor.settings.isRefrainFromScrolling) {
-                    overriddenInEditor = true
-                    editor.settings.isRefrainFromScrolling = false
-                }
-                editor.scrollingModel.scrollToCaret(ScrollType.CENTER)
-            } finally {
-                EditorSettingsExternalizable.getInstance().isRefrainFromScrolling = savedSetting
-                if (overriddenInEditor) {
-                    editor.settings.isRefrainFromScrolling = true
-                }
-            }
-        }
+        fun scrollToCenter() = scrollCaret(editor, ScrollType.CENTER)
 
         var wasMovement = false
 
@@ -1112,7 +1038,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                     editor.selectionModel.setSelection(
                         selectionStart, editor.caretModel.visualPosition, editor.caretModel.offset
                     )
-                    if (wasMovement) afterSelectionMovement(editor)
+                    if (wasMovement) movement.finish(editor)
                 } else {
                     editor.selectionModel.removeSelection()
                 }
@@ -1146,9 +1072,9 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 }
 
                 'h' -> {
-                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                        e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                    val file = window.selectedFile
+                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow? =
+                        e.getData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                    val file = window?.selectedFile
                     if (file != null) {
                         window.split(1, false, file, false)
                         window.requestFocus(true);
@@ -1157,18 +1083,18 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 }
 
                 'j' -> {
-                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                        e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                    val file = window.selectedFile
+                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow? =
+                        e.getData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                    val file = window?.selectedFile
                     if (file != null) {
                         window.split(0, true, file, true)
                     }
                 }
 
                 'k' -> {
-                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                        e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                    val file = window.selectedFile
+                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow? =
+                        e.getData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                    val file = window?.selectedFile
                     if (file != null) {
                         window.split(0, true, file, false)
                         window.requestFocus(true);
@@ -1178,9 +1104,9 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
 
                 'l' -> {
                     IdeActions.ACTION_OPEN_IN_RIGHT_SPLIT;
-                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                        e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                    val file = window.selectedFile
+                    val window: com.intellij.openapi.fileEditor.impl.EditorWindow? =
+                        e.getData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                    val file = window?.selectedFile
                     if (file != null) {
                         window.split(1, true, file, true)
                     }
@@ -1199,9 +1125,9 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             if (closeEditor) {
                 executeAction(editor, "CloseAllEditors")
 
-                val window: com.intellij.openapi.fileEditor.impl.EditorWindow =
-                    e.getRequiredData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
-                val file = window.selectedFile
+                val window: com.intellij.openapi.fileEditor.impl.EditorWindow? =
+                    e.getData(com.intellij.openapi.fileEditor.impl.EditorWindow.DATA_KEY)
+                val file = window?.selectedFile
                 if (file != null) {
                     window.requestFocus(true)
                 }
@@ -1231,63 +1157,51 @@ private fun createEditorContext(editor: Editor): DataContext {
 }
 
 fun executeAction(editor: Editor, actionId: String, assertActionIsEnabled: Boolean) {
-    val actionManager = ActionManagerEx.getInstanceEx()
-    val action = actionManager.getAction(actionId)
-//    Assert.assertNotNull(action)
+    ApplicationManager.getApplication().assertIsDispatchThread()
+    if (editor.isDisposed) return
+    WriteIntentReadAction.run {
+        val action = ActionManagerEx.getInstanceEx().getAction(actionId) ?: return@run
+        val event = AnActionEvent.createEvent(action, createEditorContext(editor), null, "", ActionUiKind.NONE, null)
+        ActionUtil.performAction(action, event)
+    }
+}
 
-    val event = AnActionEvent.createFromAnAction(action, null, "", createEditorContext(editor))
-    if (ActionUtil.lastUpdateAndCheckDumb(action, event, false)) {
-        ActionUtil.performActionDumbAwareWithCallbacks(action, event)
-    } else if (assertActionIsEnabled) {
-//        Assert.fail("Action $action is disabled")
+private fun scrollCaret(editor: Editor, scrollType: ScrollType) {
+    val settings = editor.settings
+    val refrainFromScrolling = settings.isRefrainFromScrolling
+    try {
+        if (refrainFromScrolling) settings.isRefrainFromScrolling = false
+        editor.scrollingModel.scrollToCaret(scrollType)
+    } finally {
+        if (refrainFromScrolling) settings.isRefrainFromScrolling = true
     }
 }
 
 
-private fun beforeSelectionMovement(editor: Editor) {
-    originalOffset = editor.caretModel.offset
-    selectionStartBefore = editor.selectionModel.selectionStart
-    onLeftEdge = (originalOffset == editor.selectionModel.selectionStart)
-    startedWithSelection = editor.selectionModel.hasSelection()
-}
+private class SelectionMovement(editor: Editor) {
+    private val originalOffset = editor.caretModel.offset
+    private val selectionStartBefore = editor.selectionModel.selectionStart
+    private val onLeftEdge = originalOffset == selectionStartBefore
+    private val startedWithSelection = editor.selectionModel.hasSelection()
 
-private fun afterSelectionMovement(editor: Editor) {
-    val postOffset = editor.caretModel.offset
-    val movedRight = postOffset > originalOffset;
-
-    if (startedWithSelection) {
-        if (movedRight) {
+    fun finish(editor: Editor) {
+        val postOffset = editor.caretModel.offset
+        val documentLength = editor.document.textLength
+        if (startedWithSelection) {
             if (!onLeftEdge) {
                 editor.selectionModel.setSelection(
-                    selectionStartBefore.coerceAtLeast(0), (postOffset + 1).coerceAtMost(editor.document.textLength)
+                    selectionStartBefore.coerceIn(0, documentLength),
+                    (postOffset + 1).coerceAtMost(documentLength)
                 )
             }
         } else {
-            if (!onLeftEdge) {
-                editor.selectionModel.setSelection(
-                    selectionStartBefore.coerceAtLeast(0), (postOffset + 1).coerceAtMost(editor.document.textLength)
-                )
-            }
-        }
-    } else {
-        if (movedRight) {
+            val end = if (postOffset > originalOffset) postOffset + 1 else originalOffset + 1
             editor.selectionModel.setSelection(
-                editor.selectionModel.selectionStart.coerceAtLeast(0),
-                (postOffset + 1).coerceAtMost(editor.document.textLength)
-            )
-        } else {
-            editor.selectionModel.setSelection(
-                editor.selectionModel.selectionStart.coerceAtLeast(0),
-                (originalOffset + 1).coerceAtMost(editor.document.textLength)
+                editor.selectionModel.selectionStart.coerceIn(0, documentLength),
+                end.coerceAtMost(documentLength)
             )
         }
     }
-
-//    if (editor.selectionModel.hasSelection()) {
-//        if (editor.selectionModel.selectionEnd - editor.selectionModel.selectionStart == 1) {
-//            editor.selectionModel.removeSelection()
-//        }
-//    }
 }
 
 
@@ -1334,17 +1248,13 @@ private enum class Group(i: Int) {
     Edge(0), Space(1), Token(3), Normal(4),
 }
 
-private fun seekToken(event: AnActionEvent, motionDirection: Motion, shouldUpdateSelection: Boolean, caret: Caret) {
-    val editor = event.getData(CommonDataKeys.EDITOR) ?: return
+private fun seekToken(editor: Editor, motionDirection: Motion, shouldUpdateSelection: Boolean, caret: Caret) {
+    val text = editor.document.charsSequence
 
     fun tokenType(pos: Int): Group {
-        if (pos < 0 || pos >= editor.document.textLength) return Group.Edge
+        if (pos !in text.indices) return Group.Edge
 
-        val character = try {
-            editor.document.charsSequence[pos]
-        } catch (ignored: Exception) {
-            return Group.Edge
-        }
+        val character = text[pos]
 
         if (character == ' ' || character == '\t' || character == '\n' || character == '\r') return Group.Space
         for (token in tokensList) {
@@ -1458,18 +1368,18 @@ private fun seekToken(event: AnActionEvent, motionDirection: Motion, shouldUpdat
     var foundSpace = false
     var foundNewLine = false
     for (i in newSelection.min() until newSelection.max()) {
-        val character = editor.document.text[i]
+        val character = text[i]
         if (character == ' ' || character == '\t') foundSpace = true
         if (character == '\n' || character == '\r') foundNewLine = true
     }
     if (foundSpace && !foundNewLine) {
         if (motionDirection == Motion.Right) {
             if (newSelection.max() < editor.document.textLength) {
-                seekToken(event, motionDirection, shouldUpdateSelection, caret)
+                seekToken(editor, motionDirection, shouldUpdateSelection, caret)
             }
         } else if (motionDirection == Motion.Left) {
             if (newSelection.min() > 0) {
-                seekToken(event, motionDirection, shouldUpdateSelection, caret)
+                seekToken(editor, motionDirection, shouldUpdateSelection, caret)
             }
         }
     }

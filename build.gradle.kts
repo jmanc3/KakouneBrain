@@ -1,51 +1,65 @@
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
+
 plugins {
     id("java")
-    id("org.jetbrains.kotlin.jvm") version "1.9.20"
-    id("org.jetbrains.intellij") version "1.16.0"
+    id("org.jetbrains.kotlin.jvm") version "2.4.0"
+    id("org.jetbrains.intellij.platform") version "2.18.1"
 }
 
-//IDEA 2024.3.3
 group = "com.jmanc3"
-version = "1.0.6"
+version = "1.0.7"
 
 repositories {
     mavenCentral()
+    intellijPlatform {
+        defaultRepositories()
+    }
 }
 
-// Configure Gradle IntelliJ Plugin
-// Read more: https://plugins.jetbrains.com/docs/intellij/tools-gradle-intellij-plugin.html
-intellij {
-    //type.set("CL") // Target IDE Platform
-    //version.set("2025.1.3")
-    version.set("2024.3.3")
-    //version.set("2023.1")
-    type.set("IC") // Target IDE Platform
-
-    plugins.set(listOf(/* Plugin Dependencies */))
+dependencies {
+    intellijPlatform {
+        val localPlatformPath = providers.gradleProperty("localPlatformPath")
+        if (localPlatformPath.isPresent) {
+            local(localPlatformPath)
+        } else {
+            intellijIdea(providers.gradleProperty("platformVersion"))
+        }
+        testFramework(TestFrameworkType.Platform)
+    }
+    testImplementation("junit:junit:4.13.2")
 }
 
-tasks {
-    // Set the JVM compatibility versions
-    withType<JavaCompile> {
-        sourceCompatibility = "17"
-        targetCompatibility = "17"
-    }
-    withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
-        kotlinOptions.jvmTarget = "17"
-    }
+kotlin {
+    jvmToolchain(25)
+}
 
-    patchPluginXml {
-        sinceBuild.set("231")
-        untilBuild.set("")
-    }
+tasks.test {
+    // Load only this plugin and its dependencies in the test IDE.
+    systemProperty("idea.load.plugins.id", "KakouneBrain")
+}
 
-    signPlugin {
-        certificateChain.set(System.getenv("CERTIFICATE_CHAIN"))
-        privateKey.set(System.getenv("PRIVATE_KEY"))
-        password.set(System.getenv("PRIVATE_KEY_PASSWORD"))
-    }
+tasks.check {
+    dependsOn("verifyPluginProjectConfiguration", "verifyPluginStructure")
+}
 
-    publishPlugin {
-        token.set(System.getenv("PUBLISH_TOKEN"))
+intellijPlatform {
+    pluginConfiguration {
+        ideaVersion {
+            sinceBuild = "262"
+            untilBuild = provider { null }
+        }
+    }
+    signing {
+        certificateChain = providers.environmentVariable("CERTIFICATE_CHAIN")
+        privateKey = providers.environmentVariable("PRIVATE_KEY")
+        password = providers.environmentVariable("PRIVATE_KEY_PASSWORD")
+    }
+    publishing {
+        token = providers.environmentVariable("PUBLISH_TOKEN")
+    }
+    pluginVerification {
+        ides {
+            current()
+        }
     }
 }

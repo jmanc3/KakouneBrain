@@ -96,20 +96,8 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                         return
                     }
 
-//                    val activeLookup = LookupManager.getActiveLookup(editor)
-                    var shouldInterpretEscapeAsKakEscape = true
-//                    if (activeLookup == null) {
-//                        shouldInterpretEscapeAsKakEscape = true
-//                    } else {
-//                        if (!activeLookup.component.isVisible) {
-//                            shouldInterpretEscapeAsKakEscape = true
-//                            // Check if it's going to the activeLookup is going to become visible
-//                            // If it is, then we don't want to interpret escape as kak escape
-//
-//                            if (activeLookup.)
-//
-//                        }
-//                    }
+                    // Let the IDE dismiss completion before Escape leaves insert mode.
+                    var shouldInterpretEscapeAsKakEscape = LookupManager.getActiveLookup(editor) == null
                     if (editor.selectionModel.hasSelection()) {
                         shouldInterpretEscapeAsKakEscape = false
                     }

@@ -22,7 +22,6 @@ import com.intellij.util.text.StringSearcher
 import com.jmanc3.kakounebrain.KakOnFileOpen
 import com.jmanc3.kakounebrain.KeyboardBindings.KakAction
 import com.jmanc3.kakounebrain.KeyboardBindings.NormalModeCommands
-import com.jmanc3.kakounebrain.PluginStartup
 import com.jmanc3.kakounebrain.input.KakInput
 import com.jmanc3.kakounebrain.input.implementation.other.State
 import java.awt.event.KeyEvent
@@ -66,6 +65,9 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
     }
 
     override fun update(e: AnActionEvent) {
+        val state = e.getData(CommonDataKeys.EDITOR)?.getUserData(KakOnFileOpen.kakStateKey)
+        e.presentation.isEnabled = state != null && KakInput.getInstance() != null
+        if (!e.presentation.isEnabled) return
         when (type) {
             KakAction.NEXT_ITEM, KakAction.PREVIOUS_ITEM -> {
                 val editor = CommonDataKeys.EDITOR.getData(e.dataContext)
@@ -79,7 +81,7 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
             }
 
             KakAction.CLOSE_MENU -> {
-                e.presentation.isEnabled = KakInput.getInstance().someoneWantsKeyPress != null;
+                e.presentation.isEnabled = KakInput.getInstance()?.hasPendingMenu(e.getData(CommonDataKeys.EDITOR)) == true;
             }
 
             KakAction.ESCAPE_INSERT_MODE -> {
@@ -137,23 +139,11 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
 
         when (type) {
             KakAction.SET_MODE_INSERT -> {
-                editorState.mode = State.Mode.INSERT
-                PluginStartup.removeAllShortcuts()
-                PluginStartup.addInsertKakShortcuts()
-                PluginStartup.addGlobalKakShortcuts()
-                editor.caretModel.runForEachCaret {
-                    it.visualAttributes = PluginStartup.INSERT_CARET
-                }
+                KakOnFileOpen.setMode(editor, State.Mode.INSERT)
             }
 
             KakAction.SET_MODE_NORMAL -> {
-                editorState.mode = State.Mode.NORMAL
-                PluginStartup.removeAllShortcuts()
-                PluginStartup.addNormalKakShortcuts()
-                PluginStartup.addGlobalKakShortcuts()
-                editor.caretModel.runForEachCaret {
-                    it.visualAttributes = PluginStartup.NORMAL_CARET
-                }
+                KakOnFileOpen.setMode(editor, State.Mode.NORMAL)
             }
 
             KakAction.ESCAPE_INSERT_MODE -> {
@@ -510,9 +500,18 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
                 KakFindUtildoSearch(editor, false)
             }
 
+            KakAction.SAVE_SELECTION_TO_SEARCH_BUFFER -> {
+                val mainCaret = editor.caretModel.primaryCaret
+                if (!mainCaret.hasSelection() && mainCaret.offset < editor.document.textLength) {
+                    mainCaret.setSelection(mainCaret.offset, mainCaret.offset + 1)
+                }
+                if (mainCaret.hasSelection()) {
+                    editorState.searchBuffer = mainCaret.selectedText.orEmpty()
+                }
+            }
+
             KakAction.CLOSE_MENU -> {
-                KakInput.getInstance().menuRenderer.hideIt(editor)
-                KakInput.getInstance().someoneWantsKeyPress = null
+                KakInput.getInstance().cancelPendingMenu(editor)
                 if (editorState.mode == State.Mode.INSERT) {
                     executeAction(editor, KakAction.SET_MODE_INSERT, false)
                 } else {
@@ -660,22 +659,15 @@ class KakCommand(val type: String) : AnAction(), DumbAware {
         ensureCaretFullyVisible(editor)
     }
 
-    private var previousSearch = ""
-
     private fun KakFindUtildoSearch(editor: Editor, forward: Boolean) {
+        val editorState = editor.getUserData(KakOnFileOpen.kakStateKey) ?: return
         val text = editor.document.charsSequence
         val searchers = mutableMapOf<String, StringSearcher>()
         editor.caretModel.runForEachCaret { caret ->
             val offset = caret.offset
-            val selectionStart = caret.selectionStart
-            val keepCaretAtStart = if (caret.hasSelection()) offset == selectionStart else offset == 0
-            val pattern = if (caret.hasSelection()) {
-                text.subSequence(selectionStart, caret.selectionEnd).toString()
-            } else {
-                previousSearch
-            }
+            val keepCaretAtStart = if (caret.hasSelection()) offset == caret.selectionStart else offset == 0
+            val pattern = editorState.searchBuffer
             if (pattern.isEmpty()) return@runForEachCaret
-            previousSearch = pattern
             val searcher = searchers.getOrPut(pattern) {
                 StringSearcher(pattern, true, forward)
             }
@@ -1162,6 +1154,8 @@ fun executeAction(editor: Editor, actionId: String, assertActionIsEnabled: Boole
     WriteIntentReadAction.run {
         val action = ActionManagerEx.getInstanceEx().getAction(actionId) ?: return@run
         val event = AnActionEvent.createEvent(action, createEditorContext(editor), null, "", ActionUiKind.NONE, null)
+        // A fresh event has the template's enabled state, not the current editor's availability.
+        if (action is com.intellij.ide.actions.UndoRedoAction) ActionUtil.updateAction(action, event)
         ActionUtil.performAction(action, event)
     }
 }

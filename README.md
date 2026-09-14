@@ -17,6 +17,7 @@ KakouneBrain supports many Kakoune features including normal/insert modes, motio
 |:------------------------------------------------------|:----------------:|:---------------------------------------------------------:|:---------------------:|
 | enter insert mode                                     |        i         |                     leave insert mode                     | escape (or type 'jk') |
 | next instance of selected text                        |        n         |            previous instance of selected text             |         alt+n         |
+| save selected text for instance navigation            |        *         |                                                           |                       |
 | move left                                             |        h         |                        move right                         |           l           |
 | move down                                             |        j         |                          move up                          |           k           |
 | move left with selection                              |        H         |                 move right with selection                 |           L           |
@@ -51,7 +52,6 @@ KakouneBrain supports many Kakoune features including normal/insert modes, motio
 | reverse cover letter typed + increase selection       |   alt+shift+f    | reverse go right before letter typed + increase selection |      alt+shift+t      |
 | jump to next editor                                   |        ,         |                  jump to previous editor                  |           <           |
 | next item (while drop down open)                      |      ctrl+n      |           previous item (while drop down open)            |        ctrl+p         |
-
 
 
 

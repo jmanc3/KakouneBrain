@@ -47,6 +47,7 @@ public class KeyboardBindings {
         String CLOSE_ALL_NON_PROJECT_TABS = "KAK_CLOSE_ALL_NON_PROJECT_TABS";
         String PREVIOUS_INSTANCE_OF_SELECTION = "KAK_PREVIOUS_INSTANCE_OF_SELECTION";
         String NEXT_INSTANCE_OF_SELECTION = "KAK_NEXT_INSTANCE_OF_SELECTION";
+        String SAVE_SELECTION_TO_SEARCH_BUFFER = "KAK_SAVE_SELECTION_TO_SEARCH_BUFFER";
         String SAVE_MODE = "KAK_SAVE_MODE";
         String RELOAD_MODE = "KAK_RELOAD_MODE";
         String MOVE_UP_10 = "KAK_MOVE_UP_10";
@@ -103,6 +104,7 @@ public class KeyboardBindings {
             {KakAction.CLOSE_ALL_NON_PROJECT_TABS, new KakCommand(KakAction.CLOSE_ALL_NON_PROJECT_TABS)},
             {KakAction.PREVIOUS_INSTANCE_OF_SELECTION, new KakCommand(KakAction.PREVIOUS_INSTANCE_OF_SELECTION)},
             {KakAction.NEXT_INSTANCE_OF_SELECTION, new KakCommand(KakAction.NEXT_INSTANCE_OF_SELECTION)},
+            {KakAction.SAVE_SELECTION_TO_SEARCH_BUFFER, new KakCommand(KakAction.SAVE_SELECTION_TO_SEARCH_BUFFER)},
             {KakAction.SAVE_MODE, new KakCommand(KakAction.SAVE_MODE)},
             {KakAction.RELOAD_MODE, new KakCommand(KakAction.RELOAD_MODE)},
             {KakAction.MOVE_UP_10, new KakCommand(KakAction.MOVE_UP_10)},
@@ -253,6 +255,7 @@ public class KeyboardBindings {
             {"Q", KakAction.START_STOP_MACRO},
 
             {"n", KakAction.NEXT_INSTANCE_OF_SELECTION},
+            {"*", KakAction.SAVE_SELECTION_TO_SEARCH_BUFFER},
 
             {"/", IdeActions.ACTION_FIND},
 

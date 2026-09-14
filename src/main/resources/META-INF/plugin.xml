@@ -34,7 +34,7 @@
 
     <extensions defaultExtensionNs="com.intellij">
         <actionPromoter implementation="com.jmanc3.kakounebrain.input.implementation.other.KakPromo" order="last"/>
-        <postStartupActivity implementation="com.jmanc3.kakounebrain.PluginStartup" order="first"/>
+        <postStartupActivity implementation="com.jmanc3.kakounebrain.KakStartupActivity" order="first"/>
     </extensions>
 
 

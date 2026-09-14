@@ -7,20 +7,21 @@ import com.intellij.openapi.actionSystem.ex.ActionManagerEx;
 import com.intellij.openapi.actionSystem.ex.ActionUtil;
 import com.intellij.openapi.actionSystem.impl.SimpleDataContext;
 import com.intellij.openapi.editor.Editor;
+import com.intellij.openapi.project.DumbAware;
 import com.jmanc3.kakounebrain.KakOnFileOpen;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
-public class InterceptedAction extends AnAction {
+public class InterceptedAction extends AnAction implements DumbAware {
 
-    private final String originalID;
+    private final AnAction original;
     private final State.Mode applicableMode;
     private final List<String> targetActions;
 
-    public InterceptedAction(String originalID, State.Mode applicableMode, List<String> targetActions) {
-//        super(ActionManager.getInstance().getAction(originalID));
-        this.originalID = originalID;
+    public InterceptedAction(AnAction original, State.Mode applicableMode, List<String> targetActions) {
+        getTemplatePresentation().copyFrom(original.getTemplatePresentation());
+        this.original = original;
         this.applicableMode = applicableMode;
         this.targetActions = targetActions;
     }
@@ -32,57 +33,18 @@ public class InterceptedAction extends AnAction {
 
     @Override
     public void update(@NotNull AnActionEvent e) {
-        Editor editor = e.getData(CommonDataKeys.EDITOR);
-        if (editor == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.update(e);
-//            ActionUtil.performDumbAwareUpdate(action, e, false);
-            return;
-        }
-        State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
-        if (editorState == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.update(e);
-//            ActionUtil.performDumbAwareUpdate(action, e, false);
-            return;
-        }
-
-        if (applicableMode != editorState.mode || applicableMode == State.Mode.ALL) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.update(e);
-//            ActionUtil.performDumbAwareUpdate(action, e, false);
-        }
+        // Preserve the original action's availability, including non-editor contexts.
+        ActionUtil.updateAction(original, e);
     }
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
         Editor editor = e.getData(CommonDataKeys.EDITOR);
-        if (editor == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.actionPerformed(e);
-            return;
-        }
-        State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
-        if (editorState == null) {
-            e.getPresentation().setEnabled(true);
-//            AnAction action = ActionManagerEx.getInstanceEx().getAction(originalID);
-//            action.actionPerformed(e);
-            return;
-        }
-
-        if (applicableMode == editorState.mode || applicableMode == State.Mode.ALL) {
-            if (targetActions != null) {
-                for (String targetAction : targetActions) {
-                    executeAction(editor, targetAction);
-                }
-            }
-        } else {
-            // Default action
-            executeAction(editor, originalID);
+        State state = editor == null ? null : editor.getUserData(KakOnFileOpen.kakStateKey);
+        if (state == null || (applicableMode != State.Mode.ALL && applicableMode != state.mode)) {
+            ActionUtil.performAction(original, e);
+        } else if (targetActions != null) {
+            for (String target : targetActions) executeAction(editor, target);
         }
     }
 

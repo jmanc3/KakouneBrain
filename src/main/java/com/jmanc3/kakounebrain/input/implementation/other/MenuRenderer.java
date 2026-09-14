@@ -1,10 +1,8 @@
 package com.jmanc3.kakounebrain.input.implementation.other;
 
 import com.intellij.openapi.editor.Editor;
-import com.intellij.openapi.editor.actionSystem.EditorActionHandler;
 import com.intellij.openapi.editor.colors.EditorFontType;
 import com.intellij.ui.JBColor;
-import com.jmanc3.kakounebrain.PluginStartup;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,15 +16,11 @@ public class MenuRenderer extends JComponent {
 
     public ArrayList<String> text = new ArrayList<>();
 
-    public ArrayList<Editor> editors = new ArrayList<>();
-
     public void showIt(Editor editor) {
+        if (getParent() != null) getParent().remove(this);
         this.editor = editor;
-        editors.add(editor);
         contentComponent = this.editor.getContentComponent();
         contentComponent.remove(this);
-        PluginStartup.removeAllShortcuts();
-        PluginStartup.addMenuBind();
         contentComponent.add(this);
 
         Font font = editor.getColorsScheme().getFont(EditorFontType.PLAIN);
@@ -42,17 +36,28 @@ public class MenuRenderer extends JComponent {
         }
 
         setBounds(0, 0, contentComponent.getWidth(), contentComponent.getHeight());
-        contentComponent.getParent().repaint();
+        contentComponent.repaint();
+    }
+
+    public boolean isForEditor(Editor editor) {
+        return editor != null && this.editor == editor;
     }
 
     public void hideIt(Editor editor) {
-        this.editor = editor;
-        editors.remove(editor);
-        contentComponent = this.editor.getContentComponent();
+        if (isForEditor(editor)) clear();
+    }
+
+    public void clear() {
+        Container parent = getParent();
+        if (parent != null) {
+            parent.remove(this);
+            parent.revalidate();
+            parent.repaint();
+        }
         text.clear();
         setBounds(0, 0, 0, 0);
-        contentComponent.getParent().repaint();
-        contentComponent.remove(this);
+        editor = null;
+        contentComponent = null;
     }
 
     private int textW = 0;
@@ -113,9 +118,4 @@ public class MenuRenderer extends JComponent {
         }
     }
 
-    public void hideAll() {
-        for (Editor editor : editors) {
-            hideIt(editor);
-        }
-    }
 }

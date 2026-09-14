@@ -1,21 +1,18 @@
 package com.jmanc3.kakounebrain.input;
 
-//import com.intellij.ide.IdeEventQueue;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.actionSystem.ex.AnActionListener;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.WriteIntentReadAction;
-import com.intellij.openapi.command.undo.UndoManager;
+import com.intellij.openapi.Disposable;
+import com.intellij.openapi.command.WriteCommandAction;
+import com.intellij.openapi.editor.actionSystem.TypedActionHandler;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.actionSystem.ActionPlan;
 import com.intellij.openapi.editor.actionSystem.TypedActionHandlerEx;
-import com.intellij.openapi.fileEditor.impl.text.TextEditorProvider;
-//import com.intellij.openapi.keymap.impl.IdeKeyEventDispatcher;
 import com.intellij.openapi.project.DumbAware;
-import com.intellij.util.messages.MessageBusConnection;
 import com.jmanc3.kakounebrain.KakOnFileOpen;
 import com.jmanc3.kakounebrain.KeyboardBindings;
-import com.jmanc3.kakounebrain.PluginStartup;
 import com.jmanc3.kakounebrain.input.implementation.KakFunctions;
 import com.jmanc3.kakounebrain.input.implementation.MacroRenderer;
 import com.jmanc3.kakounebrain.input.implementation.other.State;
@@ -26,15 +23,13 @@ import java.awt.*;
 import java.awt.event.AWTEventListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.Callable;
 
-import static com.intellij.openapi.application.ActionsKt.runUndoTransparentWriteAction;
 
 /**
  * Handles what happens when input is received
  */
-public class KakInput implements TypedActionHandlerEx, DumbAware {
+public class KakInput implements TypedActionHandlerEx, DumbAware, Disposable {
 
     public static KakInput instance;
 
@@ -42,7 +37,9 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
         return instance;
     }
 
-    private TypedActionHandlerEx defaultInputHandler;
+    private final TypedActionHandler defaultInputHandler;
+    private final AWTEventListener awtListener = new MyAwtPreprocessor();
+    private boolean active;
 
     private KakFunctions kakFunctions;
 
@@ -92,39 +89,23 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
         }
     }
 
-    public KakInput(TypedActionHandlerEx defaultInputHandler) {
+    public KakInput(TypedActionHandler defaultInputHandler) {
         this.defaultInputHandler = defaultInputHandler;
         kakFunctions = new KakFunctions();
-        KakInput.instance = this;
+    }
 
-        // Macro stuff
-        Toolkit.getDefaultToolkit().addAWTEventListener(new MyAwtPreprocessor(), AWTEvent.KEY_EVENT_MASK);
-        MessageBusConnection connection = ApplicationManager.getApplication().getMessageBus().connect();
+    public void install() {
+        KakInput.instance = this;
+        active = true;
+        Toolkit.getDefaultToolkit().addAWTEventListener(awtListener, AWTEvent.KEY_EVENT_MASK);
+        var connection = ApplicationManager.getApplication().getMessageBus().connect(this);
         connection.subscribe(AnActionListener.TOPIC, new AnActionListener() {
             @Override
-            public void beforeShortcutTriggered(@NotNull Shortcut shortcut, @NotNull List<AnAction> actions, @NotNull DataContext dataContext) {
-//                IdeEventQueue ideEventQueue = IdeEventQueue.getInstance();
-//                IdeKeyEventDispatcher keyEventDispatcher = ideEventQueue.getKeyEventDispatcher();
-//                KeyEvent inputEvent = keyEventDispatcher.getContext().getInputEvent();
-//
-//                if (recordingMacro) {
-//                    macroActions.add(new MacroActions(MacroActionsType.Shortcut, inputEvent));
-//                }
-            }
-
-            @Override
             public void afterActionPerformed(@NotNull AnAction action, @NotNull AnActionEvent event, @NotNull AnActionResult result) {
-                if (result.isPerformed()) {
-                    if (recordingMacro) {
-                        var actionId = ActionManager.getInstance().getId(action);
-                        if (actionId != null && !actionId.equals(KeyboardBindings.KakAction.START_STOP_MACRO)) {
-                            macroActions.add(new MacroActions(MacroActionsType.ActionText, actionId));
-                        }
-//                        if (actionId != null && actionId.equals("SearchEverywhere")) {
-//                            macroActions.add(new MacroActions(MacroActionsType.ActionText, "SearchEverywhere"));
-//                        }
-//                        if (actionId != null && actionId.equals("SearchEverywhere")) {
-//                        }
+                if (active && recordingMacro && result.isPerformed()) {
+                    String actionId = ActionManager.getInstance().getId(action);
+                    if (actionId != null && !actionId.equals(KeyboardBindings.KakAction.START_STOP_MACRO)) {
+                        macroActions.add(new MacroActions(MacroActionsType.ActionText, actionId));
                     }
                 }
             }
@@ -134,77 +115,85 @@ public class KakInput implements TypedActionHandlerEx, DumbAware {
     public Callable<Boolean> someoneWantsKeyPress = null;
 
     public char c;
-    public char before_current = '0';
+
+    public boolean hasPendingMenu(Editor editor) {
+        return active && someoneWantsKeyPress != null && menuRenderer.isForEditor(editor);
+    }
+
+    public void cancelPendingMenu(Editor editor) {
+        if (menuRenderer.isForEditor(editor)) cancelPendingMenu();
+    }
+
+    private void cancelPendingMenu() {
+        someoneWantsKeyPress = null;
+        menuRenderer.clear();
+    }
+
+    @Override
+    public void dispose() {
+        active = false;
+        recordingMacro = false;
+        Toolkit.getDefaultToolkit().removeAWTEventListener(awtListener);
+        cancelPendingMenu();
+        macroRenderer.clear();
+        macroActions.clear();
+        if (instance == this) instance = null;
+    }
 
     @Override
     public void beforeExecute(@NotNull Editor editor, char c, @NotNull DataContext context, @NotNull ActionPlan plan) {
-        State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
-        if (editorState == null) {
-            defaultInputHandler.beforeExecute(editor, c, context, plan);
-            return;
-        }
-
-        if (editorState.mode != State.Mode.NORMAL && someoneWantsKeyPress == null) {
-            defaultInputHandler.beforeExecute(editor, c, context, plan);
-        } else {
+        State state = editor.getUserData(KakOnFileOpen.kakStateKey);
+        if (active && state != null && (state.mode == State.Mode.NORMAL || hasPendingMenu(editor))) {
             kakFunctions.hanledBefore(editor, c, context, plan);
+        } else if (defaultInputHandler instanceof TypedActionHandlerEx extended) {
+            extended.beforeExecute(editor, c, context, plan);
         }
     }
 
     @Override
     public void execute(@NotNull Editor editor, char charTyped, @NotNull DataContext context) {
-        State editorState = editor.getUserData(KakOnFileOpen.kakStateKey);
-        if (editorState == null) {
+        if (someoneWantsKeyPress != null && !hasPendingMenu(editor)) cancelPendingMenu();
+        State state = editor.getUserData(KakOnFileOpen.kakStateKey);
+        if (!active || state == null) {
             defaultInputHandler.execute(editor, charTyped, context);
             return;
         }
 
-        KakInput.getInstance().c = charTyped;
-        if (someoneWantsKeyPress != null) {
+        c = charTyped;
+        if (hasPendingMenu(editor)) {
             try {
-                // Raw typing callbacks may run without write intent; menu commands access live editor state.
-                Boolean consumed = WriteIntentReadAction.computeThrowable(() -> someoneWantsKeyPress.call());
-                if (consumed) {
-                    return;
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+                if (WriteIntentReadAction.computeThrowable(() -> someoneWantsKeyPress.call())) return;
+            } catch (Exception exception) {
+                cancelPendingMenu();
+                throw new RuntimeException(exception);
             }
         }
-
-        if (editorState.mode == State.Mode.NORMAL) {
+        if (state.mode == State.Mode.NORMAL) {
+            state.resetTyping();
             kakFunctions.handled(editor, charTyped, context);
-        } else {
-            defaultInputHandler.execute(editor, charTyped, context);
+            return;
+        }
 
-            UndoManager undoManager = UndoManager.getInstance(editor.getProject());
-            var fileEditor = TextEditorProvider.getInstance().getTextEditor(editor);
-
-            if (before_current == 'j' && c == 'k') {
-                CharSequence beforeUndo = editor.getDocument().getImmutableCharSequence();
-                int startOff = editor.getCaretModel().getPrimaryCaret().getOffset();
-
-                String text = beforeUndo.subSequence(0, startOff - 2) + beforeUndo.subSequence(startOff, beforeUndo.length()).toString();
-
-                undoManager.undo(fileEditor);
-
-                runUndoTransparentWriteAction(() -> {
-                    editor.getDocument().replaceString(0, editor.getDocument().getTextLength(), text);
-                    return null;
-                });
-
-                editorState.mode = State.Mode.NORMAL;
-                editor.getCaretModel().runForEachCaret(caret -> {
-                    if (editorState.mode == State.Mode.INSERT) {
-                        caret.setVisualAttributes(PluginStartup.INSERT_CARET);
-                    } else {
-                        caret.setVisualAttributes(PluginStartup.NORMAL_CARET);
-                    }
-                });
-                editor.getCaretModel().removeSecondaryCarets();
-                editor.getCaretModel().moveToOffset(startOff - 2);
-            }
-            before_current = c;
+        var document = editor.getDocument();
+        int offset = editor.getCaretModel().getOffset();
+        boolean escape = charTyped == 'k' && state.pendingJOffset == offset
+                && state.pendingJStamp == document.getModificationStamp()
+                && editor.getCaretModel().getCaretCount() == 1 && !editor.getSelectionModel().hasSelection();
+        state.resetTyping();
+        defaultInputHandler.execute(editor, charTyped, context);
+        int after = editor.getCaretModel().getOffset();
+        if (escape && after == offset + 1 && after >= 2
+                && "jk".contentEquals(document.getCharsSequence().subSequence(after - 2, after))) {
+            // Delete only the verified chord; never undo or replace unrelated document content.
+            WriteCommandAction.runWriteCommandAction(editor.getProject(), "Exit insert mode", null, () -> {
+                document.deleteString(after - 2, after);
+                editor.getCaretModel().moveToOffset(after - 2);
+                KakOnFileOpen.setMode(editor, State.Mode.NORMAL);
+            });
+        } else if (charTyped == 'j' && after == offset + 1 && editor.getCaretModel().getCaretCount() == 1
+                && document.getCharsSequence().charAt(after - 1) == 'j') {
+            state.pendingJOffset = after;
+            state.pendingJStamp = document.getModificationStamp();
         }
     }
 }

@@ -7,7 +7,7 @@ plugins {
 }
 
 group = "com.jmanc3"
-version = "1.0.7"
+version = "1.0.8"
 
 repositories {
     mavenCentral()
@@ -44,6 +44,11 @@ tasks.check {
 
 intellijPlatform {
     pluginConfiguration {
+        changeNotes = """
+            <ul>
+              <li>Added a status bar icon and a Tools menu action to enable/disable KakouneBrain without restarting the IDE.</li>
+            </ul>
+        """.trimIndent()
         ideaVersion {
             sinceBuild = "262"
             untilBuild = provider { null }

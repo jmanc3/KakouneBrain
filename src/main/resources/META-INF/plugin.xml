@@ -35,7 +35,16 @@
     <extensions defaultExtensionNs="com.intellij">
         <actionPromoter implementation="com.jmanc3.kakounebrain.input.implementation.other.KakPromo" order="last"/>
         <postStartupActivity implementation="com.jmanc3.kakounebrain.KakStartupActivity" order="first"/>
+        <statusBarWidgetFactory id="KakouneBrain-StatusIcon"
+                                implementation="com.jmanc3.kakounebrain.KakStatusBarIconFactory"
+                                order="last, before Memory"/>
     </extensions>
+
+    <actions>
+        <action id="KakouneBrain.Toggle" class="com.jmanc3.kakounebrain.KakToggleAction">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+        </action>
+    </actions>
 
 
     <projectListeners>

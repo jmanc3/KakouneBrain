@@ -4,7 +4,9 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.application.WriteIntentReadAction;
+import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.Service;
+import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.EditorFactory;
 import com.intellij.openapi.editor.actionSystem.TypedAction;
@@ -18,17 +20,44 @@ import com.jmanc3.kakounebrain.input.implementation.KakCommand;
 import com.jmanc3.kakounebrain.input.implementation.other.InterceptedAction;
 import com.jmanc3.kakounebrain.input.implementation.other.State;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
 /** Owns one reversible activation across all projects. All mutations run on EDT. */
 @Service(Service.Level.APP)
-public final class KakPluginService implements Disposable {
+@com.intellij.openapi.components.State(name = "KakouneBrainSettings", storages = @Storage("kakounebrain.xml"))
+public final class KakPluginService implements Disposable, PersistentStateComponent<KakPluginService.Settings> {
+    private final Settings settings = new Settings();
     private Activation activation;
     private boolean disposed;
 
+    /** Persisted across IDE restarts. Default: enabled, so the plugin is active right after install. */
+    public static final class Settings {
+        public boolean enabled = true;
+    }
+
     public static KakPluginService getInstance() {
         return ApplicationManager.getApplication().getService(KakPluginService.class);
+    }
+
+    /** Whether the plugin is currently enabled. Readable before the service is created (defaults to enabled). */
+    public static boolean isEnabled() {
+        KakPluginService instance = ApplicationManager.getApplication().getServiceIfCreated(KakPluginService.class);
+        return instance == null || instance.settings.enabled;
+    }
+
+    /** Toggles the plugin on/off (must run on EDT) and refreshes the status bar icon. */
+    public void setEnabled(boolean enable) {
+        ApplicationManager.getApplication().assertIsDispatchThread();
+        if (settings.enabled == enable) return;
+        settings.enabled = enable;
+        if (enable) {
+            activate();
+        } else {
+            deactivate();
+        }
+        KakStatusBarIconFactory.updateWidgets();
     }
 
     public void activate() {
@@ -45,6 +74,8 @@ public final class KakPluginService implements Disposable {
     }
 
     public void attachEditor(Editor editor) {
+        // Keep files opened while the plugin is disabled from re-enabling it.
+        if (!settings.enabled) return;
         activate();
         if (activation != null) WriteIntentReadAction.run(() -> activation.attach(editor));
     }
@@ -65,6 +96,16 @@ public final class KakPluginService implements Disposable {
         };
         if (ApplicationManager.getApplication().isDispatchThread()) cleanup.run();
         else ApplicationManager.getApplication().invokeAndWait(cleanup);
+    }
+
+    @Override
+    public @Nullable Settings getState() {
+        return settings;
+    }
+
+    @Override
+    public void loadState(@NotNull Settings state) {
+        settings.enabled = state.enabled;
     }
 
     private static final class Activation implements Disposable {

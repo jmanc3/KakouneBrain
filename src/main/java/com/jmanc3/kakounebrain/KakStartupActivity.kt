@@ -9,7 +9,11 @@ import kotlinx.coroutines.withContext
 class KakStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         withContext(Dispatchers.EDT) {
-            if (!project.isDisposed) KakPluginService.getInstance().activate()
+            // Acquiring the service first applies the persisted enabled/disabled state.
+            KakPluginService.getInstance()
+            if (!project.isDisposed && KakPluginService.isEnabled()) {
+                KakPluginService.getInstance().activate()
+            }
         }
     }
 }
